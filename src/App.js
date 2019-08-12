@@ -13,7 +13,10 @@ class App extends React.Component{
   constructor() {
     super()
     this.state = {
-        messages: []
+        messages: [],
+        joinableRooms:[],
+        joinedRooms:[]
+
     }
     this.sendMessage = this.sendMessage.bind(this)
   } 
@@ -25,6 +28,18 @@ class App extends React.Component{
     .connect()
       .then(currentUser => {
         this.currentUser = currentUser
+
+        this.currentUser.getJoinableRooms()
+        .then(joinableRooms => {
+          this.setState({
+            joinableRooms,
+            joinedRooms: this.currentUser.rooms
+          })
+        })
+        .catch(err => {
+          console.log(`Error getting joinable rooms: ${err}`)
+        })
+
         this.currentUser.subscribeToRoomMultipart({
           roomId: this.currentUser.rooms[0].id,
           hooks: {
@@ -51,7 +66,7 @@ class App extends React.Component{
   render (){
     return (
       <div className="app">
-      <RoomList />
+      <RoomList rooms={[...this.state.joinableRooms,...this.state.joinedRooms]}/>
       <MessageList messages={this.state.messages}/>
       <SendMessageForm sendMessage={this.sendMessage}/>
       <NewRoomForm />
