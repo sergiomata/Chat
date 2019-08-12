@@ -13,12 +13,15 @@ class App extends React.Component{
   constructor() {
     super()
     this.state = {
+        roomId:null,
         messages: [],
         joinableRooms:[],
         joinedRooms:[]
 
     }
     this.sendMessage = this.sendMessage.bind(this)
+    this.subscribeToRoom = this.subscribeToRoom.bind(this)
+    this.getRooms = this.getRooms.bind(this)
   } 
 
 
@@ -29,7 +32,15 @@ class App extends React.Component{
       .then(currentUser => {
         this.currentUser = currentUser
 
-        this.currentUser.getJoinableRooms()
+        this.getRooms()
+      })
+      .catch(error => {
+        console.error("error:", error);
+      })
+  }
+
+  getRooms(){
+    this.currentUser.getJoinableRooms()
         .then(joinableRooms => {
           this.setState({
             joinableRooms,
@@ -39,34 +50,42 @@ class App extends React.Component{
         .catch(err => {
           console.log(`Error getting joinable rooms: ${err}`)
         })
-
-        this.currentUser.subscribeToRoomMultipart({
-          roomId: this.currentUser.rooms[0].id,
-          hooks: {
-            onMessage: message => {
-              this.setState({
-                messages: [...this.state.messages,message]
-              })
-            }
-          }
-        });
-      })
-      .catch(error => {
-        console.error("error:", error);
-      })
   }
 
   sendMessage(text){
     this.currentUser.sendSimpleMessage({
           text: text,
-          roomId: this.currentUser.rooms[0].id
+          roomId: this.state.roomId
     })  
+  }
+
+  subscribeToRoom(roomId){
+    this.setState({ messages:[] })
+    this.currentUser.subscribeToRoomMultipart({
+      roomId: roomId,
+      hooks: {
+        onMessage: message => {
+          this.setState({
+            messages: [...this.state.messages,message]
+          })
+        }
+      }
+    }).then(room =>{
+      this.setState({
+        roomId:room.id
+      })
+      this.getRooms()
+    }).catch(err => {
+      console.log(`Error getting joinable rooms: ${err}`)
+    })
   }
 
   render (){
     return (
       <div className="app">
-      <RoomList rooms={[...this.state.joinableRooms,...this.state.joinedRooms]}/>
+      <RoomList
+        subscribeToRoom={this.subscribeToRoom} 
+        rooms={[...this.state.joinableRooms,...this.state.joinedRooms]}/>
       <MessageList messages={this.state.messages}/>
       <SendMessageForm sendMessage={this.sendMessage}/>
       <NewRoomForm />
