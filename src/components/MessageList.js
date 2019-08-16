@@ -10,11 +10,24 @@ class MessageList extends  React.Component {
     }
 
     componentDidUpdate(){
-        const node = ReactDOM.findDomNode(this)
-        node.scrollTop = node.scrollHeight
+        if(this.shouldScrolltoBottom){
+            const node = ReactDOM.findDOMNode(this)
+            node.scrollTop = node.scrollHeight
+        }
     }
 
     render() {
+
+        if(!this.props.roomId){
+            return(
+                <div className="message-list">
+                    <div className="join-room">
+                        &larr; Join a room!
+                    </div>
+                </div>
+            )
+        }
+
         return (
             <div className="message-list">
                 {this.props.messages.map((message, index) => {
